@@ -1,17 +1,23 @@
+
+
+
+
 class Buffer{
   private:
     int size;
     int* list;
-    int position;
+    int lastlastPosition;
+    int firstlastPosition;
   public:
     Buffer(int n);
     void addData(int k);
     int *getLastData(int k);
+    int *popLastData(int k);
 };
 
 Buffer::Buffer(int n){
   this->size = n; 
-  this->position = 0;
+  this->lastlastPosition = 0;
   this->list = new int[n];
   
 };
@@ -33,11 +39,18 @@ int *Buffer::getLastData(int k){
 
 
 void Buffer::addData(int k){
-  this->list[this->position] = this->size;
-  this->position += 1;
-  this->position = this->position%this->size;
+  this->list[this->lastPosition] = this->size;
+  this->lastPosition += 1;
+  this->lastPosition = this->lastPosition%this->size;
   return;
 };
 
-
-
+int *Buffer::popLastData(int k){
+   if(k>this->size or k<=0){
+    //Lancer une exception
+    
+  }else{
+    int *dataArray = this::getLastData(k);
+    this->firsData = (this->lastPosition-k)%this->size;
+  }
+}
