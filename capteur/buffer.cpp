@@ -1,27 +1,9 @@
+#include "buffer.h"
 
-
-
-
-class Buffer{
-  private:
-    int size;
-    int* list;
-    int lastlastPosition;
-    int firstlastPosition;
-  public:
-    Buffer(int n);
-    void addData(int k);
-    int *getLastData(int k);
-    int *popLastData(int k);
-};
-
-Buffer::Buffer(int n){
-  this->size = n; 
-  this->lastlastPosition = 0;
-  this->list = new int[n];
-  
-};
-
+Buffer::Buffer(){
+  for(int i=0;i<LONGUEUR_BUFFER;i++)
+    buffer[i] = null;
+}
 
 int *Buffer::getLastData(int k){
   if(k>this->size or k<=0){
@@ -36,7 +18,6 @@ int *Buffer::getLastData(int k){
   }
   
 };
-
 
 void Buffer::addData(int k){
   this->list[this->lastPosition] = this->size;
