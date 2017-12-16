@@ -14,6 +14,8 @@ const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
 const char* wifiSSID = "wifi";
 const char* wifiMdp = "mdp";
+const char* mqttUsername = "capteur";
+const char* mqttTopic = "topic";
 
 /* *** Objets pour les librairies *** */
 // Connexion wi-fi
@@ -42,6 +44,7 @@ Buffer buffer;
 void callback(const MQTT::Publish& pub);
 void setup();
 void tickWifi();
+String format(Mesure m);
 void loop();
 
 /* *** Fonctions *** */
@@ -75,6 +78,10 @@ void tickWifi(){
   }
 }
 
+String format(Mesure m){
+  return String(m.timestamp)+','+String(m.valeur);
+}
+
 void loop() {
   // Wi-fi
   tickWifi();
@@ -82,7 +89,14 @@ void loop() {
   timeClient.update();
   // MQTT
   if (WiFi.status() == WL_CONNECTED) {
-    if (clientMQTT.connected()) {
+    if (!clientMQTT.connected()) {
+      if(clientMQTT.connect(mqttUsername)){
+        clientMQTT.set_callback(callback);
+      }
+    }
+    else{
+      if(buffer.disponible())
+        clientMQTT.publish(MQTT::Publish(mqttTopic, format(buffer.popOldestData())).set_qos(1));
       clientMQTT.loop();
     }
   }
