@@ -86,10 +86,9 @@ void loop() {
       clientMQTT.loop();
     }
   }
-  
-  // Mesurer la temperature
-  // Stocker la temperature
-  // Verifier s'il faut envoyer les donnees
+  // Mesurer la température
+  // Stocker la température
+  // Vérifier s'il faut envoyer les données
   // Les envoyer s'il le faut
 }
 
