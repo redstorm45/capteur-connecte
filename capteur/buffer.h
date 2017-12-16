@@ -14,12 +14,12 @@ struct Mesure
 
 class Buffer{
   private:
-    Mesure list[LONGUEUR_BUFFER];
+    Mesure* list[LONGUEUR_BUFFER];
     int lastPosition;  // position de l'élément le plus ancien
     int firstPosition; // première position libre
   public:
     Buffer();
-    void addData(Mesure k);
+    bool addData(Mesure k);
     bool disponible();
     Mesure popOldestData();
 };
