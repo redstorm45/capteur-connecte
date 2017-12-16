@@ -7,7 +7,7 @@
 /* Structure d'une mesure */
 struct Mesure
 {
-  int valeur;
+  float valeur;
   unsigned long timestamp;
 };
 

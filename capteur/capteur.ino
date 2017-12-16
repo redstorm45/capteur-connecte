@@ -9,6 +9,8 @@
 /* *** Paramètres du programme *** */
 // Pins
 #define PIN_CAPTEUR  2
+// Délai entre chaque mesure (ms)
+#define DELAI_MESURE  60000
 // Chaînes
 const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
@@ -25,7 +27,7 @@ PubSubClient clientMQTT(espClient, urlBrokerMQTT);
 // Lien UDP
 WiFiUDP ntpUDP;
 // Client NTP pour l'horodatage des données
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000); // offset(s), delai(ms)
+NTPClient timeClient(ntpUDP, urlServeurNTP, 3600, 60000); // offset(s), delai(ms)
 // Instance OneWire pour le capteur de température
 OneWire oneWire(PIN_CAPTEUR);
 // Objet capteurs de températures
@@ -35,16 +37,18 @@ DeviceAddress adresseCapteur;
 
 /* *** Variables globales *** */
 // wi-fi
-unsigned long timerWifi;
 bool etatWifi = false;
 // buffer
 Buffer buffer;
+// mesures
+unsigned long timerMesure;
 
 /* *** Définitions des fonctions *** */
 void callback(const MQTT::Publish& pub);
 void setup();
 void tickWifi();
 String format(Mesure m);
+Mesure capte();
 void loop();
 
 /* *** Fonctions *** */
@@ -56,7 +60,6 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
   }
-  timerWifi = millis();
   etatWifi = true;
   // NTP et MQTT déjà initialisés (objets créés)
   timeClient.begin();
@@ -64,7 +67,7 @@ void setup() {
   capteurs.begin();
   capteurs.getAddress(adresseCapteur, 0);
   capteurs.setResolution(adresseCapteur, 12);
-  // Initialisation du buffer
+  timerMesure = millis() - DELAI_MESURE; // On force la première mesure
 }
 
 void tickWifi(){
@@ -80,6 +83,12 @@ void tickWifi(){
 
 String format(Mesure m){
   return String(m.timestamp)+','+String(m.valeur);
+}
+
+Mesure capte(){
+  capteurs.requestTemperatures();
+  Mesure m={.valeur = capteurs.getTempC(adresseCapteur), .timestamp = timeClient.getEpochTime()};
+  return m;
 }
 
 void loop() {
@@ -100,10 +109,11 @@ void loop() {
       clientMQTT.loop();
     }
   }
-  // Mesurer la température
-  // Stocker la température
-  // Vérifier s'il faut envoyer les données
-  // Les envoyer s'il le faut
+  // Capteur
+  if(millis()-timerMesure >= DELAI_MESURE){
+    Mesure m=capte();
+    buffer.addData(m);
+  }
 }
 
 
