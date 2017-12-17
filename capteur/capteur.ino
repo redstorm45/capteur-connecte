@@ -14,9 +14,9 @@
 // Chaînes
 const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
-const char* wifiSSID = "wifi";
+const char* wifiSSID = "ssid";
 const char* wifiMdp = "mdp";
-const char* mqttUsername = "capteur";
+const char* mqttUsername = "user";
 const char* mqttTopic = "topic";
 
 /* *** Objets pour les librairies *** */
@@ -48,7 +48,7 @@ void callback(const MQTT::Publish& pub);
 void setup();
 void tickWifi();
 String format(Mesure m);
-Mesure capte();
+Mesure* capte();
 void loop();
 
 /* *** Fonctions *** */
@@ -81,13 +81,14 @@ void tickWifi(){
   }
 }
 
-String format(Mesure m){
-  return String(m.timestamp)+','+String(m.valeur);
+String format(Mesure* m){
+  return String(m->timestamp)+','+String(m->valeur);
 }
 
-Mesure capte(){
+Mesure* capte(){
   capteurs.requestTemperatures();
-  Mesure m={.valeur = capteurs.getTempC(adresseCapteur), .timestamp = timeClient.getEpochTime()};
+  Mesure* m=new Mesure;
+  (*m) = {.valeur = capteurs.getTempC(adresseCapteur), .timestamp = timeClient.getEpochTime()};
   return m;
 }
 
@@ -104,14 +105,18 @@ void loop() {
       }
     }
     else{
-      if(buffer.disponible())
-        clientMQTT.publish(MQTT::Publish(mqttTopic, format(buffer.popOldestData())).set_qos(1));
+      if(buffer.disponible()){
+        Mesure* m = buffer.popOldestData();
+        clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(1));
+        delete m;
+      }
       clientMQTT.loop();
     }
   }
   // Capteur
   if(millis()-timerMesure >= DELAI_MESURE){
-    Mesure m=capte();
+    timerMesure += DELAI_MESURE;
+    Mesure* m=capte();
     buffer.addData(m);
   }
 }

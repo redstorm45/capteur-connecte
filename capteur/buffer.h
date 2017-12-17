@@ -19,9 +19,9 @@ class Buffer{
     int firstPosition; // première position libre
   public:
     Buffer();
-    bool addData(Mesure k);
+    bool addData(Mesure* k);
     bool disponible();
-    Mesure popOldestData();
+    Mesure* popOldestData();
 };
 
 #endif
