@@ -11,6 +11,10 @@
 #define PIN_CAPTEUR  2
 // Délai entre chaque mesure (ms)
 #define DELAI_MESURE  60000
+#define DELAI_MESURE_ECRASANT 900000
+#define DELAI_ENVOI 900000
+#define DELAI_NTP 60000 // délai (ms)
+#define OFFSET_NTP 3600 // offset(s)
 // Chaînes
 const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
@@ -27,11 +31,14 @@ PubSubClient clientMQTT(espClient, urlBrokerMQTT);
 // Lien UDP
 WiFiUDP ntpUDP;
 // Client NTP pour l'horodatage des données
-NTPClient timeClient(ntpUDP, urlServeurNTP, 3600, 60000); // offset(s), delai(ms)
+NTPClient timeClient(ntpUDP, urlServeurNTP, OFFSET_NTP, DELAI_NTP); 
+
 // Instance OneWire pour le capteur de température
 OneWire oneWire(PIN_CAPTEUR);
+
 // Objet capteurs de températures
 DallasTemperature capteurs(&oneWire);
+
 // Objet pour l'addresse du capteur
 DeviceAddress adresseCapteur;
 
@@ -41,7 +48,9 @@ bool etatWifi = false;
 // buffer
 Buffer buffer;
 // mesures
+
 unsigned long timerMesure;
+unsigned long timerEnvoi;
 
 /* *** Définitions des fonctions *** */
 void callback(const MQTT::Publish& pub);
@@ -68,6 +77,7 @@ void setup() {
   capteurs.getAddress(adresseCapteur, 0);
   capteurs.setResolution(adresseCapteur, 12);
   timerMesure = millis() - DELAI_MESURE; // On force la première mesure
+  timerEnvoi = millis();
 }
 
 void tickWifi(){
@@ -105,17 +115,27 @@ void loop() {
       }
     }
     else{
-      if(buffer.disponible()){
-        Mesure* m = buffer.popOldestData();
-        clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(1));
-        delete m;
+      if(millis()-timerEnvoi >= DELAI_ENVOI){
+        if(buffer.disponible()){
+          
+          Mesure* m = buffer.popOldestData();
+          clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(1));
+          delete m;
+
+          
+        }else{
+          
+          //Une fois que toutes les données ont été envoyée, on considere que c'est la fin du paquet.
+          timerEnvoi = millis();          
+          
+        }
       }
       clientMQTT.loop();
     }
   }
   // Capteur
-  if(millis()-timerMesure >= DELAI_MESURE){
-    timerMesure += DELAI_MESURE;
+  if(millis()-timerMesure >= buffer.isInLightMode()?DELAI_MESURE_ECRASANT:DELAI_MESURE){
+    timerMesure += buffer.isInLightMode()?DELAI_MESURE_ECRASANT:DELAI_MESURE;
     Mesure* m=capte();
     buffer.addData(m);
   }
