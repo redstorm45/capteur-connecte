@@ -117,17 +117,12 @@ void loop() {
     else{
       if(millis()-timerEnvoi >= DELAI_ENVOI){
         if(buffer.disponible()){
-          
           Mesure* m = buffer.popOldestData();
-          clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(1));
+          clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(2));
           delete m;
-
-          
         }else{
-          
           //Une fois que toutes les données ont été envoyée, on considere que c'est la fin du paquet.
-          timerEnvoi = millis();          
-          
+          timerEnvoi = millis();
         }
       }
       clientMQTT.loop();
