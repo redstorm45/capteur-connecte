@@ -10,11 +10,13 @@
 // Pins
 #define PIN_CAPTEUR  2
 // Délai entre chaque mesure (ms)
-#define DELAI_MESURE  60000
-#define DELAI_MESURE_ECRASANT 900000
-#define DELAI_ENVOI 900000
+#define DELAI_MESURE  5000
+#define DELAI_MESURE_ECRASANT 50000
+#define DELAI_ENVOI 30000
 #define DELAI_NTP 60000 // délai (ms)
 #define OFFSET_NTP 3600 // offset(s)
+// Mode débug
+#define DEBUG
 // Chaînes
 const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
@@ -66,9 +68,19 @@ void callback(const MQTT::Publish& pub) {}
 void setup() {
   // Initialiser la connexion wifi
   WiFi.begin(wifiSSID, wifiMdp);
+  #ifdef DEBUG
+    Serial.begin(9600);
+    Serial.println("MAC Address:"+WiFi.macAddress());
+  #endif
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
+    #ifdef DEBUG
+      Serial.print(WiFi.status());
+    #endif
+    delay(500);
   }
+  #ifdef DEBUG
+    Serial.println("connecté");
+  #endif
   etatWifi = true;
   // NTP et MQTT déjà initialisés (objets créés)
   timeClient.begin();
@@ -78,13 +90,14 @@ void setup() {
   capteurs.setResolution(adresseCapteur, 12);
   timerMesure = millis() - DELAI_MESURE; // On force la première mesure
   timerEnvoi = millis();
+  #ifdef DEBUG
+    Serial.println("initialisé");
+  #endif
 }
 
 void tickWifi(){
   if(etatWifi and WiFi.status() != WL_CONNECTED){
     // on vient de perde la connexion
-    WiFi.disconnect();
-    WiFi.begin(wifiSSID, wifiMdp);
     etatWifi = false;
   }else if(!etatWifi and WiFi.status() == WL_CONNECTED){
     etatWifi = true;
@@ -112,10 +125,19 @@ void loop() {
     if (!clientMQTT.connected()) {
       if(clientMQTT.connect(mqttUsername)){
         clientMQTT.set_callback(callback);
+        #ifdef DEBUG
+          Serial.println("connecté au broker mqtt");
+        #endif
       }
+      #ifdef DEBUG
+      else{
+         Serial.println("connection au broker mqtt impossible");
+      }
+      #endif
     }
     else{
       if(millis()-timerEnvoi >= DELAI_ENVOI){
+        Serial.println("envoi possible");
         if(buffer.disponible()){
           Mesure* m = buffer.popOldestData();
           clientMQTT.publish(MQTT::Publish(mqttTopic, format(m)).set_qos(2));
@@ -134,6 +156,8 @@ void loop() {
     Mesure* m=capte();
     buffer.addData(m);
   }
+  // Lib du capteur
+  yield();
 }
 
 
