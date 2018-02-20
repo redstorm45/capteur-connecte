@@ -2,7 +2,6 @@
 #include "Arduino.h"
 
 Buffer::Buffer(){
-  
   for(int i=0;i<LONGUEUR_BUFFER;i++)
     list[i] = NULL;
   lastPosition = 0;
@@ -11,7 +10,7 @@ Buffer::Buffer(){
 }
 
 bool Buffer::disponible(){
-  return this->list[this->firstPosition] == NULL;
+  return this->list[this->lastPosition] != NULL;
 }
 bool Buffer::isInLightMode(){
   return this->inLightMode;
