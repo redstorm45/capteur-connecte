@@ -11,7 +11,8 @@
 #define PIN_CAPTEUR  2
 // Délai entre chaque mesure (ms)
 #define DELAI_MESURE  5000
-#define DELAI_MESURE_ECRASANT 50000
+#define DELAI_MESURE_ECRASANT 60000
+#define DELAI_MESURE_CONVERSION 800
 #define DELAI_ENVOI 30000
 #define DELAI_NTP 60000 // délai (ms)
 #define OFFSET_NTP 3600 // offset(s)
@@ -31,9 +32,11 @@ WiFiClient espClient;
 // Connexion MQTT
 PubSubClient clientMQTT(espClient);
 // Lien UDP
+/*
 WiFiUDP ntpUDP;
 // Client NTP pour l'horodatage des données
-NTPClient timeClient(ntpUDP, urlServeurNTP, OFFSET_NTP, DELAI_NTP); 
+NTPClient timeClient(ntpUDP, urlServeurNTP, OFFSET_NTP, DELAI_NTP);
+*/
 unsigned long lastTSUpdate;
 unsigned long currentTS;
 
@@ -96,10 +99,9 @@ void setup() {
   #endif
   etatWifi = true;
   // NTP et MQTT déjà initialisés (objets créés)
-  timeClient.begin();
+  //timeClient.begin();
   clientMQTT.setServer(urlBrokerMQTT, 1883);
   clientMQTT.setCallback(callback);
-  //timeClient.begin();
   delay(500);
   // Connexion au capteur
   capteurs.begin();
@@ -135,7 +137,7 @@ void loop() {
   // Wi-fi
   tickWifi();
   // NTP
-  timeClient.update();
+  //timeClient.update();
   // MQTT
   if (WiFi.status() == WL_CONNECTED) {
     if (!clientMQTT.connected()) {
