@@ -55,15 +55,14 @@ Ces constantes permettent d'appliquer une compilation différente au programme, 
 
 ## Position des pins
 
-Voici l'arrangement des pins sur un ESP-01, vu de dessus
+Voici l'arrangement des pins sur un ESP-01, vu de dessus (pins en dessous), avec l'antenne wi-fi sur la gauche.
 
-|         |       |       |
-|:-------:|-------|-------|
-|  Reste  | RX    | VCC   |
-|   de    | GPIO0 | RST   |
-|   la    | GPIO2 | CH_PD |
-|  carte  | GND   | TX    |
-|---------|-------|-------|
+|       |       |
+|-------|-------|
+| RX    | VCC   |
+| GPIO0 | RST   |
+| GPIO2 | CH_PD |
+| GND   | TX    |
 
 ## Connexion
 
