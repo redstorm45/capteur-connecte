@@ -18,6 +18,8 @@
 #define OFFSET_NTP 3600 // offset(s)
 // Mode débug
 #define DEBUG
+#define NTP_SERVER
+
 // Chaînes
 const char* urlBrokerMQTT = "url";
 const char* urlServeurNTP = "url";
@@ -32,13 +34,14 @@ WiFiClient espClient;
 // Connexion MQTT
 PubSubClient clientMQTT(espClient);
 // Lien UDP
-/*
-WiFiUDP ntpUDP;
-// Client NTP pour l'horodatage des données
-NTPClient timeClient(ntpUDP, urlServeurNTP, OFFSET_NTP, DELAI_NTP);
-*/
-unsigned long lastTSUpdate;
-unsigned long currentTS;
+#ifdef NTP_SERVER
+ WiFiUDP ntpUDP;
+ // Client NTP pour l'horodatage des données
+ NTPClient timeClient(ntpUDP, urlServeurNTP, OFFSET_NTP, DELAI_NTP);
+#else
+ unsigned long lastTSUpdate;
+ unsigned long currentTS;
+#endif
 
 // Instance OneWire pour le capteur de température
 OneWire oneWire(PIN_CAPTEUR);
@@ -70,6 +73,7 @@ void loop();
 
 /* *** Fonctions *** */
 void callback(char* topic, byte* payload, unsigned int length) {
+  #ifndef NTP_SERVER 
   if(strcmp(topic, "timestamp")==0){
     unsigned long newTS = 0;
     for(int i=0; i<length; i++){
@@ -79,6 +83,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     lastTSUpdate = millis();
     currentTS = newTS;
   }
+  #endif
 }
 
 void setup() {
@@ -96,10 +101,13 @@ void setup() {
   }
   #ifdef DEBUG
     Serial.println("connecté");
+    Serial.println(WiFi.localIP());
   #endif
   etatWifi = true;
   // NTP et MQTT déjà initialisés (objets créés)
-  //timeClient.begin();
+  #ifdef NTP_SERVER
+    timeClient.begin();
+  #endif
   clientMQTT.setServer(urlBrokerMQTT, 1883);
   clientMQTT.setCallback(callback);
   delay(500);
@@ -129,7 +137,12 @@ String format(Mesure* m){
 
 Mesure* capte(){
   Mesure* m=new Mesure;
-  (*m) = {.valeur = capteurs.getTempC(adresseCapteur), .timestamp = (currentTS+(long)(millis()-lastTSUpdate)/1000)};//timeClient.getEpochTime()};
+  #ifdef NTP_SERVER
+    unsigned long TS = timeClient.getEpochTime();
+  #else
+    unsigned long TS = currentTS+(unsigned long)(millis()-lastTSUpdate)/1000;
+  #endif
+  (*m) = {.valeur = capteurs.getTempC(adresseCapteur), .timestamp = TS};
   return m;
 }
 
@@ -137,7 +150,9 @@ void loop() {
   // Wi-fi
   tickWifi();
   // NTP
-  //timeClient.update();
+  #ifdef NTP_SERVER
+    timeClient.update();
+  #endif
   // MQTT
   if (WiFi.status() == WL_CONNECTED) {
     if (!clientMQTT.connected()) {
@@ -184,6 +199,10 @@ void loop() {
   if((millis()-timerMesure) >= (buffer.isInLightMode()?DELAI_MESURE_ECRASANT:DELAI_MESURE)){
     timerMesure += buffer.isInLightMode()?DELAI_MESURE_ECRASANT:DELAI_MESURE;
     capteurs.requestTemperatures();
+    lastMesureDone = true;
+    #ifdef DEBUG
+      Serial.println("request mesure");
+    #endif
   }
   if(((millis()-timerMesure) >= DELAI_MESURE_CONVERSION) && lastMesureDone){
     lastMesureDone = false;
@@ -193,7 +212,7 @@ void loop() {
       Serial.println("mesure!");
     #endif
   }
-  // Lib du capteur
+  // Fonctionnement de la pile TCP de l'ESP8266
   yield();
 }
 
