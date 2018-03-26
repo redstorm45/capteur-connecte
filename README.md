@@ -57,6 +57,7 @@ Ces constantes permettent d'appliquer une compilation différente au programme, 
 
 Voici l'arrangement des pins sur un ESP-01, vu de dessus
 
+|         |       |       |
 |:-------:|-------|-------|
 |  Reste  | RX    | VCC   |
 |   de    | GPIO0 | RST   |
