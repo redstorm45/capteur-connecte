@@ -10,14 +10,14 @@
 // Pins
 #define PIN_CAPTEUR  2
 // Délai entre chaque mesure (ms)
-#define DELAI_MESURE  5000
-#define DELAI_MESURE_ECRASANT 60000
+#define DELAI_MESURE  30000
+#define DELAI_MESURE_ECRASANT 300000
 #define DELAI_MESURE_CONVERSION 800
-#define DELAI_ENVOI 30000
-#define DELAI_NTP 60000 // délai (ms)
-#define OFFSET_NTP 3600 // offset(s)
+#define DELAI_ENVOI 150000
+#define DELAI_NTP 600000 // délai (ms)
+#define OFFSET_NTP 0     // offset(s) 0: on veut le temps universel
 // Mode débug
-#define DEBUG
+//#define DEBUG
 #define NTP_SERVER
 
 // Chaînes
